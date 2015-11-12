@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title> Vis - Bar Chart </title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>  
+  <link href='https://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+  <style type="text/css">
+      .axis text {
+        font-family: 'Lato', sans-serif;
+      }
+
+      .tick {
+        font-size: 14pt;
+      }
+
+      .label {
+        font-size: 18pt;
+      }
+
+      .x.axis path, .x.axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+      }
+
+      .y.axis path .y.axis line {
+        stroke: none;
+      }
+  </style>
+
+</head>
+<body>
+  <h1 class="font_title"> This is a horizontal bar chart </h1>
+   
+  <script>
+    var outerWidth  = 600;
+    var outerHeight = 250;
+    var margin      = { left: 130, top: 40, right: 130, bottom: 60 };
+    var barPadding  = 0.2; // 20% of the bar width 
+
+    var xColumn     = "population";
+    var yColumn     = "name";
+    var colorColumn = "latitude";
+
+    var xAxisLabelText  = "Population";
+    var xAxisLabelOffset= 50;
+
+    var sizeSquareLegend = 10;
+
+    // var yAxisLabelText    = "Cities"
+    // var yAxisLabelOffset  = 55;
+
+    var innerWidth  = outerWidth  - margin.left - margin.right;
+    var innerHeight = outerHeight - margin.top  - margin.bottom;
+
+    
+    var svg = d3.select("body").append("svg")
+          .attr("width", outerWidth)
+          .attr("height", outerHeight);
+    
+    // Create a group to put the chart itself
+    var g = svg.append("g")
+          .attr("transform", "translate("+margin.left+", "+margin.top+")");
+
+    var xAxisG = g.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0, "+innerHeight+")");
+    var xAxisLabel = xAxisG.append("text")
+          .style("text-anchor", "middle")
+          .attr("transform", "translate("+ innerWidth/2 +", "+ xAxisLabelOffset+")")
+          .attr("class", "label")
+          .text(xAxisLabelText);
+
+    var yAxisG = g.append("g")
+          .attr("class", "y axis");
+    // var yAxisLabel = yAxisG.append("text")
+    //       .style("text-anchor", "middle")
+    //       .attr("transform", "translate(-"+yAxisLabelOffset+", "+ innerHeight/2 + ") rotate(-90)")
+    //       .attr("class", "label")
+    //       .text(yAxisLabelText);
+
+    var xScale    = d3.scale.linear().range([0, innerWidth]);
+    var yScale    = d3.scale.ordinal().rangeBands([0, innerHeight], barPadding);
+    var colorScale= d3.scale.category10();
+
+    var xAxis = d3.svg.axis().scale(xScale).orient("bottom")
+          .ticks(5)
+          .tickFormat(d3.format("s"))
+          .outerTickSize(0);
+    var yAxis = d3.svg.axis().scale(yScale).orient("left")
+          .outerTickSize(0);
+
+
+    function render(data) {
+      // map() returns an array with names fo the domain
+      xScale.domain( [0, d3.max(data, function(d) { return d[xColumn]; })] );
+      yScale.domain(        data.map( function(d) { return d[yColumn]; })  );
+
+      xAxisG.call(xAxis);      
+      yAxisG.call(yAxis);      
+
+      // Bind
+      var bars = g.selectAll("rect").data(data);
+
+      // Enter
+      bars.enter().append("rect")
+          .attr("height", yScale.rangeBand());
+
+      // Update
+      bars
+        .attr("x",     0)
+        .attr("y",     function(d) { return  yScale(d[yColumn]); })
+        .attr("fill",  function(d) { return colorScale(d[colorColumn])})
+        .transition()
+        .each("start", function() {
+          d3.select(this)
+            .attr("width", 0); // To interpolate width, initialize width
+        })
+        .duration(1000)
+        .attr("width", function(d) { return  xScale(d[xColumn]); })
+        .ease("elastic");
+
+      // Exit
+      bars.exit().remove();
+      
+      console.log(colorScale.domain());
+
+      var legend = svg.selectAll(".legend")
+          .data(colorScale.domain())
+        .enter().append("g")
+          .attr("class", "legend")
+          .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+      legend.append("rect")
+          .attr("x", outerWidth - sizeSquareLegend)
+          .attr("width", sizeSquareLegend)
+          .attr("height", sizeSquareLegend)
+          .style("fill", colorScale);
+
+      legend.append("text")
+          .attr("x", outerWidth - 24)
+          .attr("y", 9)
+          .attr("dy", ".2em")
+          .style("text-anchor", "end")
+          .text(function(d) { return d; });
+    }
+    
+    function type(d){
+      console.log("Parsing...");
+      // d.name      = d.name;
+      // d.latitude  = +d.latitude;
+      // d.longitude = +d.longitude;
+      d.population= +d.population;
+      return d;
+    }
+
+    console.log("Running...");
+
+    d3.csv("https://raw.githubusercontent.com/CarH/d3/master/top3_cities.csv", type, render);
+    
+  </script>
+  
+</body>
+</html>
+

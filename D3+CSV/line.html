@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title> Vis - Line Chart </title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>  
+
+  <style type="text/css">
+    path {
+      fill: none;
+      stroke: blue;
+      stroke-width: 1px;
+      /*shape-rendering: crispEdges;*/
+
+    }
+
+    .axis text {
+      font-family: 'Lato', sans-serif;
+    }
+
+    .tick { /* size of tick font */
+      font-size: 14px;
+    }
+
+    .label { /* size of label font */
+      font-size: 28px;
+    }
+
+    .axis path, .axis line {
+      fill:none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+
+  </style>
+
+</head>
+<body>
+  <h1 class="font_title"> This is a line chart </h1>
+   
+  <script>
+    var outerWidth  = 500;
+    var outerHeight = 250;
+    var margin      = { left: 70, top: 5, right: 5, bottom: 60 };
+
+    var innerWidth  = outerWidth  - margin.left - margin.right;
+    var innerHeight = outerHeight - margin.top  - margin.bottom;
+
+    var xColumn     = "timestamp";
+    var yColumn     = "temperature";
+
+    var xAxisLabelText    = "Time";
+    var xAxisLabelOffset  = 48; 
+
+    var yAxisLabelText = "Temperature C";
+    var yAxisLabelOffset  = 40; 
+    
+
+    var svg = d3.select("body").append("svg")
+          .attr("width", outerWidth)
+          .attr("height", outerHeight);
+    
+    // Create a group to put the points of the chart
+    var g = svg.append("g")
+          .attr("transform", "translate("+margin.left+", "+margin.top+")");
+
+    var path = g.append("path");
+
+
+    var xAxisG = g.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0, "+innerHeight+")");
+    // Creating x label:
+    var xAxisLabel = xAxisG.append("text")
+          .style("text-anchor", "middle")
+          .attr("transform", "translate(" + (innerWidth / 2) + "," +xAxisLabelOffset + ")")
+          .attr("class", "label")
+          .text(xAxisLabelText);
+
+    var yAxisG = g.append("g")
+          .attr("class", "y axis");
+    // Creating y label
+    var yAxisLabel = yAxisG.append("text")
+          .style("text-anchor", "middle")
+          .attr("transform", "translate(-"+yAxisLabelOffset+", "+innerHeight/2+") rotate(-90)")
+          .attr("class", "label")
+          .text(yAxisLabelText);
+
+    var xScale    = d3.time.scale().range([0, innerWidth]);
+    var yScale    = d3.scale.linear().range([innerHeight, 0]);
+
+    // Creating the axis:
+    var xAxis = d3.svg.axis().scale(xScale).orient("bottom")
+          .ticks(5)
+          .outerTickSize(0);
+    var yAxis = d3.svg.axis().scale(yScale).orient("left")
+          .tickFormat(d3.format("s"))
+          .outerTickSize(0);
+    
+    // Create a line object specifying the x an y attributes 
+    var line = d3.svg.line()
+          .x(function(d) { return xScale( d[xColumn] ); })
+          .y(function(d) { return yScale( d[yColumn] ); });
+
+    function render(data) {
+
+      xScale.domain( d3.extent(data, function(d) { return d[xColumn]; }));
+      yScale.domain( d3.extent(data, function(d) { return d[yColumn]; }));
+
+      xAxisG.call(xAxis);
+      yAxisG.call(yAxis);
+
+      path.attr("d", line(data));
+    }
+    
+    function type(d){
+      console.log("Parsing...");
+      d.timestamp = new Date(d.timestamp);
+      d.temperature = +d.temperature;
+      return d;
+    }
+
+    console.log("Running...");
+
+    d3.csv("https://raw.githubusercontent.com/CarH/d3/master/temperature.csv", type, render);
+    
+  </script>
+  
+</body>
+</html>
+
